@@ -202,7 +202,7 @@ def draw_boxes(frame, v_boxes, v_labels, v_scores, out, image_w, image_h):
 		#pyplot.text(x1, y1, label, color='white')
 		font = cv2.FONT_HERSHEY_SIMPLEX
 		cv2.putText(frame,label,(x1,y1-5), font, 0.5,tuple(clr),2,cv2.LINE_AA)
-	cv2.imshow('Resultat', frame)
+	#cv2.imshow('Resultat', frame)
 	frame = frame.astype(np.uint8)
 	out.write(frame)
 
