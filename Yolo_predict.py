@@ -7,6 +7,9 @@ from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 from matplotlib import pyplot
 from matplotlib.patches import Rectangle
+import cv2
+from tqdm import tqdm
+from utils import colors
 
 class BoundBox:
 	def __init__(self, xmin, ymin, xmax, ymax, objness = None, classes = None):
@@ -101,7 +104,7 @@ def do_nms(boxes, nms_thresh):
 	if len(boxes) > 0:
 		nb_class = len(boxes[0].classes)
 	else:
-		return
+		returnv_labels
 	for c in range(nb_class):
 		sorted_indices = np.argsort([-box.classes[c] for box in boxes])
 		for i in range(len(sorted_indices)):
@@ -143,56 +146,78 @@ def get_boxes(boxes, labels, thresh):
 				# don't break, many labels may trigger for one box
 	return v_boxes, v_labels, v_scores
 
+def find():
+
+	tmp = dict()
+
+	def findLabel(data, label):
+
+		try:
+			return tmp[label]
+		except:
+
+			if len(data) == 0:
+				return len(data) - 1
+
+			for i in range(len(data)):
+
+				if data[i] == label:
+					tmp[label] = i
+					return i
+
+	return findLabel
+
+
+findLabel = find()
+
+
+#cv2.namedWindow('Resultat',cv2.WINDOW_NORMAL)
 # draw all results
-def draw_boxes(filename, v_boxes, v_labels, v_scores):
+def draw_boxes(frame, v_boxes, v_labels, v_scores, out, image_w, image_h):
 	# load the image
-	data = pyplot.imread(filename)
+	#data = pyplot.imread(filename)
 	# plot the image
-	pyplot.imshow(data)
+	frame = np.squeeze(frame, axis=0)
+	frame = cv2.resize(frame, (image_w, image_h))
+	#pyplot.imshow(frame)
 	# get the context for drawing boxes
-	ax = pyplot.gca()
+	#ax = pyplot.gca()
 	# plot each box
 	for i in range(len(v_boxes)):
 		box = v_boxes[i]
 		# get coordinates
+		lab = v_labels[i]
+		lab = findLabel(labels, lab)
+		clr = colors.get_color(lab)
 		y1, x1, y2, x2 = box.ymin, box.xmin, box.ymax, box.xmax
 		# calculate width and height of the box
 		width, height = x2 - x1, y2 - y1
+		cv2.rectangle(frame,(x1,y1),(x2,y2),tuple(clr),3)
 		# create the shape
-		rect = Rectangle((x1, y1), width, height, fill=False, color='white')
+		#rect = Rectangle((x1, y1), width, height, fill=False, color='white')
 		# draw the box
-		ax.add_patch(rect)
+		#ax.add_patch(rect)
 		# draw text and score in top left corner
 		label = "%s (%.3f)" % (v_labels[i], v_scores[i])
-		pyplot.text(x1, y1, label, color='white')
+		#pyplot.text(x1, y1, label, color='white')
+		font = cv2.FONT_HERSHEY_SIMPLEX
+		cv2.putText(frame,label,(x1,y1-5), font, 0.5,tuple(clr),2,cv2.LINE_AA)
+	cv2.imshow('Resultat', frame)
+	frame = frame.astype(np.uint8)
+	out.write(frame)
+
 	# show the plot
-	pyplot.show()
+	#pyplot.show()
+	#cv2.resizeWindow('Resultat', 800,800)
+
+
 
 # load yolov3 model
 model = load_model('model.h5')
 # define the expected input shape for the model
 input_w, input_h = 416, 416
-# define our new photo
-photo_filename = 'zebra.jpeg'
-# load and prepare image
-image, image_w, image_h = load_image_pixels(photo_filename, (input_w, input_h))
-# make prediction
-yhat = model.predict(image)
-# summarize the shape of the list of arrays
-print([a.shape for a in yhat])
-# define the anchors
-anchors = [[116,90, 156,198, 373,326], [30,61, 62,45, 59,119], [10,13, 16,30, 33,23]]
-# define the probability threshold for detected objects
-class_threshold = 0.6
-boxes = list()
-for i in range(len(yhat)):
-	# decode the output of the network
-	boxes += decode_netout(yhat[i][0], anchors[i], class_threshold, input_h, input_w)
-# correct the sizes of the bounding boxes for the shape of the image
-correct_yolo_boxes(boxes, image_h, image_w, input_h, input_w)
-# suppress non-maximal boxes
-do_nms(boxes, 0.5)
 # define the labels
+
 labels = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck",
 	"boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench",
 	"bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "Zebre", "giraffe",
@@ -204,9 +229,60 @@ labels = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", 
 	"remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator",
 	"book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
 # get the details of the detected objects
-v_boxes, v_labels, v_scores = get_boxes(boxes, labels, class_threshold)
-# summarize what we found
-for i in range(len(v_boxes)):
-	print(v_labels[i], v_scores[i])
-# draw what we found
-draw_boxes(photo_filename, v_boxes, v_labels, v_scores)
+
+
+cap = cv2.VideoCapture("Video_Route.mp4")
+# Define the codec and create VideoWriter object
+width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))   # float `width`
+height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter('output.mp4',fourcc, 20.0, (width, height))
+nframes = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+tq = tqdm(total=nframes)
+while(True):
+	# Capture frame-by-fout.release()rame
+	ret, frame = cap.read()
+	# Our operations on the frame come here
+	if not ret:
+		break
+	image_w, image_h, _ = frame.shape
+	# make prediction
+	frame = cv2.resize(frame, (input_w, input_h))
+	# convert to numpy arrayVideoCapture editing video in ...
+	frame = img_to_array(frame)
+	# scale pixel values to [0, 1]
+	frame = frame.astype('float32')
+	frame /= 255.0
+	# add a dimension so that we have one sample
+	frame = expand_dims(frame, 0)
+	yhat = model.predict(frame)
+	# summarize the shape of the list of arrays
+	#print([a.shape for a in yhat])
+	# define the anchors
+	anchors = [[116,90, 156,198, 373,326], [30,61, 62,45, 59,119], [10,13, 16,30, 33,23]]
+	# define the probability threshold for detected objects
+	class_threshold = 0.6
+	boxes = list()
+	for i in range(len(yhat)):
+		# decode the output of the network
+		boxes += decode_netout(yhat[i][0], anchors[i], class_threshold, input_h, input_w)
+	#correct the sizes of the bounding boxes for the shape of the image
+	correct_yolo_boxes(boxes, image_h, image_w, input_h, input_w)
+	# suppress non-maximal boxes
+	do_nms(boxes, 0.5)    # Display the resulting frame
+
+	# get the details of the detected objects
+	v_boxes, v_labels, v_scores = get_boxes(boxes, labels, class_threshold)
+	# summarize what we found
+	#for i in range(len(v_boxes)):
+	#    print(v_labels[i], v_scores[i])
+	# draw what we found
+	draw_boxes(frame, v_boxes, v_labels, v_scores, out, image_w, image_h)
+	tq.update(1)
+
+	if cv2.waitKey(1) & 0xFF == ord('q'):
+		break
+	# When everything done, release the capture
+cap.release()
+out.release()
+cv2.destroyAllWindows()

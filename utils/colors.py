@@ -1,17 +1,3 @@
-def get_color(label):
-    """ Return a color from a set of predefined colors. Contains 80 colors in total.
-    code originally from https://github.com/fizyr/keras-retinanet/
-    Args
-        label: The label to get the color for.
-    Returns
-        A list of three values representing a RGB color.
-    """
-    if label < len(colors):
-        return colors[label]
-    else:
-        print('Label {} has no color, returning default.'.format(label))
-        return (0, 255, 0)
-
 colors = [
     [31  , 0   , 255] ,
     [0   , 159 , 255] ,
@@ -94,3 +80,19 @@ colors = [
     [0   , 44  , 255] ,
     [50  , 255 , 0]
 ]
+
+
+
+def get_color(label):
+    """ Return a color from a set of predefined colors. Contains 80 colors in total.
+    code originally from https://github.com/fizyr/keras-retinanet/
+    Args
+        label: The label to get the color for.
+    Returns
+        A list of three values representing a RGB color.
+    """
+    if label < len(colors):
+        return colors[label]
+    else:
+        print('Label {} has no color, returning default.'.format(label))
+        return (0, 255, 0)
