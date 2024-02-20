@@ -1,7 +1,7 @@
 import numpy as np
 import os
-import xml.etree.ElementTree as ET
 import pickle
+import defusedxml.ElementTree
 
 def parse_voc_annotation(ann_dir, img_dir, cache_name, labels=[]):
     if os.path.exists(cache_name):
@@ -16,7 +16,7 @@ def parse_voc_annotation(ann_dir, img_dir, cache_name, labels=[]):
             img = {'object':[]}
 
             try:
-                tree = ET.parse(ann_dir + ann)
+                tree = defusedxml.ElementTree.parse(ann_dir + ann)
             except Exception as e:
                 print(e)
                 print('Ignore this bad annotation: ' + ann_dir + ann)
