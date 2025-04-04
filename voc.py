@@ -2,11 +2,12 @@ import numpy as np
 import os
 import xml.etree.ElementTree as ET
 import pickle
+import fickling
 
 def parse_voc_annotation(ann_dir, img_dir, cache_name, labels=[]):
     if os.path.exists(cache_name):
         with open(cache_name, 'rb') as handle:
-            cache = pickle.load(handle)
+            cache = fickling.load(handle)
         all_insts, seen_labels = cache['all_insts'], cache['seen_labels']
     else:
         all_insts = []
