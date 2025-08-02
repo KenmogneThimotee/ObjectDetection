@@ -1,9 +1,9 @@
-import random
 import argparse
 import numpy as np
 
 from voc import parse_voc_annotation
 import json
+import secrets
 
 def IOU(ann, centroids):
     w, h = ann
@@ -54,7 +54,7 @@ def run_kmeans(ann_dims, anchor_num):
     iteration = 0
     old_distances = np.zeros((ann_num, anchor_num))
 
-    indices = [random.randrange(ann_dims.shape[0]) for i in range(anchor_num)]
+    indices = [secrets.SystemRandom().randrange(ann_dims.shape[0]) for i in range(anchor_num)]
     centroids = ann_dims[indices]
     anchor_dim = ann_dims.shape[1]
 
